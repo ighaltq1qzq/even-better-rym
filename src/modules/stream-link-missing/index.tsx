@@ -1,6 +1,5 @@
 import { waitForDocumentReady } from '../../common/utils/dom'
 import { isDefined } from '../../common/utils/types'
-import { sanitize } from '../../common/utils/sanitize'
 import { getDisplayType, setDisplayType } from './settings'
 import type { DisplayType, Row, State, StreamLinkName } from './types'
 import {
@@ -85,13 +84,12 @@ export async function main() {
   header.textContent = 'Media links'
 
   const select = document.createElement('select')
-  select.innerHTML = sanitize(
-    displayTypes
-      .map(
-        (displayType) => `<option value='${displayType}'>${displayType}</option>`,
-      )
-      .join(''),
-  )
+  for (const displayType of displayTypes) {
+    const opt = document.createElement('option')
+    opt.value = displayType
+    opt.textContent = displayType
+    select.append(opt)
+  }
 
   select.value = state.displayType
   select.addEventListener('change', (event) => {
@@ -104,12 +102,16 @@ export async function main() {
   header.append(select)
 
   const fieldset = document.createElement('fieldset')
-  fieldset.innerHTML = sanitize('<legend>Filters</legend>')
+  const legend = document.createElement('legend')
+  legend.textContent = 'Filters'
+  fieldset.append(legend)
   fieldset.className = 'brym'
   table.before(fieldset)
 
   const linksFilterElement = document.createElement('div')
-  linksFilterElement.innerHTML = sanitize(`<label>Missing media links</label>`)
+  const linksLabel = document.createElement('label')
+  linksLabel.textContent = 'Missing media links'
+  linksFilterElement.append(linksLabel)
   linksFilterElement.append(
     makeSelector(new Set(state.filters.links), (selected) => {
       updateState((s) => ({ filters: { ...s.filters, links: [...selected] } }))
@@ -119,7 +121,9 @@ export async function main() {
   fieldset.append(linksFilterElement)
 
   const artistTitleFilterContainer = document.createElement('div')
-  artistTitleFilterContainer.innerHTML = sanitize('<label>Artist/Title<label>')
+  const artistLabel = document.createElement('label')
+  artistLabel.textContent = 'Artist/Title'
+  artistTitleFilterContainer.append(artistLabel)
   const artistTitleFilterElement = document.createElement('input')
   artistTitleFilterElement.value = state.filters.artistTitle
   artistTitleFilterElement.addEventListener('input', (event) => {
@@ -174,18 +178,16 @@ async function initializeState(): Promise<State> {
 
 function render(state: State) {
   for (const row of state.rows) {
-    row.mediaLinksElement.innerHTML = sanitize(
-      (
-        state.displayType === 'available'
-          ? row.availableMediaLinks
-          : row.missingMediaLinks
-      )
-        .map(
-          (serviceId) =>
-            `<span class="ui_media_link_btn ui_media_link_btn_${serviceId}" style="cursor:default;"></span>`,
-        )
-        .join(''),
-    )
+    row.mediaLinksElement.textContent = ''
+    const list = (state.displayType === 'available'
+      ? row.availableMediaLinks
+      : row.missingMediaLinks)
+    for (const serviceId of list) {
+      const span = document.createElement('span')
+      span.className = `ui_media_link_btn ui_media_link_btn_${serviceId}`
+      span.style.cursor = 'default'
+      row.mediaLinksElement.append(span)
+    }
 
     const showLinkFilter =
       state.filters.links.length === 0 ||
@@ -223,9 +225,9 @@ function makeSelector(
   for (const streamLinkName of streamLinkNames) {
     const streamLinkButton = document.createElement('button')
     streamLinkButton.className = 'brym selector-button'
-    streamLinkButton.innerHTML = sanitize(
-      `<span class="ui_media_link_btn ui_media_link_btn_${streamLinkName}"></span>`,
-    )
+    const innerSpan = document.createElement('span')
+    innerSpan.className = `ui_media_link_btn ui_media_link_btn_${streamLinkName}`
+    streamLinkButton.append(innerSpan)
     const renderSelected = (selected: boolean) => {
       if (selected) {
         streamLinkButton.classList.add('selected')

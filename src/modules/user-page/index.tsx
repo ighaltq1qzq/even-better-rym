@@ -4,7 +4,6 @@ import { Loader } from '../../common/components/loader'
 import { forceQuerySelector, waitForElement } from '../../common/utils/dom'
 import { fetchInPage } from '../../common/utils/fetch'
 import { parseMarkup } from '../../common/utils/markup'
-import { sanitize } from '../../common/utils/sanitize'
 
 let headerArray: Element[]
 let currentPreferences: FormData
@@ -38,11 +37,13 @@ const getCorrespondingContent = (alias: string) => {
 
 const createEditButton = (alias: string, field: string) => {
   const edit = document.createElement('a')
+  edit.href = 'javascript:void(0)'
+  edit.className = BUTTON_CLASSES
+  edit.style.cssText = COMMON_STYLE + 'bottom:0.3em; font-size:.6em'
+  edit.dataset.alias = alias
+  edit.dataset.field = field
+  edit.textContent = 'edit'
   getHeader(alias)?.prepend(edit)
-  edit.outerHTML = sanitize(
-    `<a href="javascript:void(0)" class="${BUTTON_CLASSES}" style="${COMMON_STYLE + 'bottom:0.3em; font-size:.6em'
-    }" data-alias="${alias}" data-field="${field}">edit</a>`,
-  )
   forceQuerySelector<HTMLAnchorElement>(getHeader(alias))('a').addEventListener(
     'click',
     editClick,
@@ -61,9 +62,10 @@ const editClick = (event: MouseEvent) => {
     const contentBox = forceQuerySelector(
       getCorrespondingContent(button.dataset.alias),
     )('div')
-    forceQuerySelector<HTMLSpanElement>(contentBox)(
+    const rendered = forceQuerySelector<HTMLSpanElement>(contentBox)(
       '.rendered_text',
-    ).outerHTML = ''
+    )
+    if (rendered) rendered.remove()
 
     const contentText = document.createElement('textarea')
     contentText.textContent =
@@ -133,7 +135,7 @@ const previewClick = (event: MouseEvent) => {
       lockAndLoad(button)
 
     const existing = container.querySelector('.rendered_text')
-    if (existing) existing.outerHTML = ''
+    if (existing) existing.remove()
 
     void parseMarkup(
       forceQuerySelector<HTMLTextAreaElement>(container)('textarea').value ||
@@ -143,7 +145,8 @@ const previewClick = (event: MouseEvent) => {
       line.style.margin = '1em 0'
       value.prepend(line)
       container.append(value)
-      forceQuerySelector(container)('svg[class*="loader"]').outerHTML = ''
+      const loaderSvg = forceQuerySelector(container)('svg[class*=\"loader\"]')
+      if (loaderSvg) loaderSvg.remove()
       unlock(button)
     })
   }
@@ -163,11 +166,13 @@ const closeUpShop = (button: HTMLAnchorElement) => {
 
     void parseMarkup(currentPreferences.get(field)?.toString() ?? '').then(
       (value) => {
-        container.innerHTML = sanitize(
-          `<div style="padding:14px;">${sanitize(
-            value.outerHTML,
-          )}</div><div class="clear"></div>`,
-        )
+        container.textContent = ''
+        const wrapper = document.createElement('div')
+        wrapper.style.padding = '14px'
+        wrapper.append(value)
+        const clear = document.createElement('div')
+        clear.className = 'clear'
+        container.append(wrapper, clear)
         forceQuerySelector<HTMLElement>(document)(
           `.bubble_header a[data-field=${field}]`,
         ).style.display = 'inline-block'
