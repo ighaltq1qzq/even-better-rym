@@ -9,6 +9,7 @@ const hostsArray = [
     'https://*.music.apple.com/*',
     'https://itunes.apple.com/*',
     'https://bandcamp.com/*',
+    'https://*.bandcamp.com/*',
     'https://beatport.com/*',
     'https://deezer.com/*',
     'https://api.deezer.com/*',
@@ -138,7 +139,7 @@ export function getManifest(
       manifest_version: manifestVersion,
       browser_specific_settings: {
         gecko: {
-          id: 'even-better-rym',
+          id: 'even-better-rym@rateyourmusic.com',
           data_collection_permissions: {
             required: ["none"]
           }
